@@ -23,8 +23,7 @@ import timeit
 
 tic = timeit.default_timer()
 
-userhome = os.path.expanduser('~')
-datafolder = userhome + '\\Dropbox\\Python\\dpcp\\data\\'
+datafolder = 'R:\\DA_and_Reward\\jem64\\1704_DPCP\\DPCP_Data\\'
 
 class Rat(object):
     
@@ -76,7 +75,7 @@ class Session(object):
             self.distractors = self.distractors_calc
             self.distractorstatus = 'Simulated distractor'
         
-metafile = userhome + '/Dropbox/Python/dpcp/DPCP1Masterfile.txt'
+metafile = 'R:\\DA_and_Reward\\jem64\\1704_DPCP\\DPCP1Masterfile.txt'
 #metafile = 'R:\\DA_and_Reward\\kp259\THPH1\\THPH1 Scripts_170616\\thph1-forMatPy.txt'
 metafileData, metafileHeader = jmf.metafilereader(metafile)
 
