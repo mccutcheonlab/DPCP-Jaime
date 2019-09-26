@@ -112,71 +112,87 @@ for i in rats:
         x.extractdistractors()
         x.firstlick, x.distractedArray = jmf.distractedOrNot(x.distractors, x.lickData['licks'])
         
-i = 'dpcp1.1'
-j = 's2'
+i = 'dpcp1.16'
+j = 's4'
 
-x = rats[i].sessions[j]
+session = rats[i].sessions[j]
 
-cumsumBL = []
-cumsumBLsal = []
-cumsumBLpcp = []
 
-cumsumDIS= []
-cumsumDISsal = []
-cumsumDISpcp = []
+def calculate_pdp_prob(pdps):
+    bins = np.arange(min(pdps), max(pdps))
+    hist=np.histogram(pdps, bins=bins, density=True)
+    cumsum=np.cumsum(hist[0])
 
-for i in rats:
-    j = 's3'
-    x = rats[i].sessions[j]
-    cumsumBL.append(x.firstlick)
-    if x.condition == 'SAL':
-        cumsumBLsal.append(x.firstlick)
-    elif x.condition == 'PCP':
-        cumsumBLpcp.append(x.firstlick)
-        
-    j = 's4'
-    x = rats[i].sessions[j]
-    cumsumDIS.append(x.firstlick)
-    if x.condition == 'SAL':
-        cumsumDISsal.append(x.firstlick)
-    elif x.condition == 'PCP':
-        cumsumDISpcp.append(x.firstlick)
+    x = hist[1][1:]
+    y = [1-val for val in cumsum]
     
-groupFig = plt.figure(figsize=(8.27, 11.69), dpi=100)
-gs1 = gridspec.GridSpec(5, 2)
-gs1.update(left=0.125, right= 0.9, wspace=0.4, hspace = 0.8)
-plt.suptitle('Group data')
-    
-ax = plt.subplot(gs1[0, 0])
-for x in cumsumBL:
-    jmfig.cumulativelickFig(ax, x, color='grey')
-avg = [item for rat in cumsumBL for item in rat]
-jmfig.cumulativelickFig(ax, avg, color='k')
-ax.set_title('Baseline')
-    
-    
-ax = plt.subplot(gs1[0, 1])
-for x in cumsumDIS:
-    jmfig.cumulativelickFig(ax, x, color='grey')
-avg = [item for rat in cumsumDIS for item in rat]
-jmfig.cumulativelickFig(ax, avg, color='k')
-ax.set_title('Distraction Day')
+    return x, y
 
-ax = plt.subplot(gs1[1, 0])
-for x in cumsumDISsal:
-    jmfig.cumulativelickFig(ax, x, color='grey')
-avgDISsal = [item for rat in cumsumDISsal for item in rat]
-jmfig.cumulativelickFig(ax, avgDISsal, color='k')
-ax.set_title('Distraction Day - Saline')
-    
-    
-ax = plt.subplot(gs1[1, 1])
-for x in cumsumDISpcp:
-    jmfig.cumulativelickFig(ax, x, color='grey')
-avgDISpcp = [item for rat in cumsumDISpcp for item in rat]
-jmfig.cumulativelickFig(ax, avgDISpcp, color='k')
-ax.set_title('Distraction Day - PCP')
-    
-ks_2samp(avgDISsal, avgDISpcp)
-        
+xdata, ydata = calculate_pdp_prob(session.firstlick)
 
+
+#
+#
+#cumsumBL = []
+#cumsumBLsal = []
+#cumsumBLpcp = []
+#
+#cumsumDIS= []
+#cumsumDISsal = []
+#cumsumDISpcp = []
+#
+#for i in rats:
+#    j = 's3'
+#    x = rats[i].sessions[j]
+#    cumsumBL.append(x.firstlick)
+#    if x.condition == 'SAL':
+#        cumsumBLsal.append(x.firstlick)
+#    elif x.condition == 'PCP':
+#        cumsumBLpcp.append(x.firstlick)
+#        
+#    j = 's4'
+#    x = rats[i].sessions[j]
+#    cumsumDIS.append(x.firstlick)
+#    if x.condition == 'SAL':
+#        cumsumDISsal.append(x.firstlick)
+#    elif x.condition == 'PCP':
+#        cumsumDISpcp.append(x.firstlick)
+#    
+#groupFig = plt.figure(figsize=(8.27, 11.69), dpi=100)
+#gs1 = gridspec.GridSpec(5, 2)
+#gs1.update(left=0.125, right= 0.9, wspace=0.4, hspace = 0.8)
+#plt.suptitle('Group data')
+#    
+#ax = plt.subplot(gs1[0, 0])
+#for x in cumsumBL:
+#    jmfig.cumulativelickFig(ax, x, color='grey')
+#avg = [item for rat in cumsumBL for item in rat]
+#jmfig.cumulativelickFig(ax, avg, color='k')
+#ax.set_title('Baseline')
+#    
+#    
+#ax = plt.subplot(gs1[0, 1])
+#for x in cumsumDIS:
+#    jmfig.cumulativelickFig(ax, x, color='grey')
+#avg = [item for rat in cumsumDIS for item in rat]
+#jmfig.cumulativelickFig(ax, avg, color='k')
+#ax.set_title('Distraction Day')
+#
+#ax = plt.subplot(gs1[1, 0])
+#for x in cumsumDISsal:
+#    jmfig.cumulativelickFig(ax, x, color='grey')
+#avgDISsal = [item for rat in cumsumDISsal for item in rat]
+#jmfig.cumulativelickFig(ax, avgDISsal, color='k')
+#ax.set_title('Distraction Day - Saline')
+#    
+#    
+#ax = plt.subplot(gs1[1, 1])
+#for x in cumsumDISpcp:
+#    jmfig.cumulativelickFig(ax, x, color='grey')
+#avgDISpcp = [item for rat in cumsumDISpcp for item in rat]
+#jmfig.cumulativelickFig(ax, avgDISpcp, color='k')
+#ax.set_title('Distraction Day - PCP')
+#    
+##ks_2samp(avgDISsal, avgDISpcp)
+#        
+#
