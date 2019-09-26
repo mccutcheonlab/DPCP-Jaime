@@ -5,6 +5,9 @@ Analysis for dpcp1 experiment
 
 @author: James Rig
 """
+import sys
+sys.path.insert(0,'C:\\Github\\functions-and-figures\\')
+
 import numpy as np
 import scipy.io as sio
 import matplotlib.pyplot as plt
@@ -21,10 +24,12 @@ plt.style.use('seaborn-muted')
 import os
 import timeit
 
+
+
 tic = timeit.default_timer()
 
 userhome = os.path.expanduser('~')
-datafolder = userhome + '\\Dropbox\\Python\\dpcp\\data\\'
+datafolder = 'data\\'
 
 class Rat(object):
     
@@ -76,7 +81,7 @@ class Session(object):
             self.distractors = self.distractors_calc
             self.distractorstatus = 'Simulated distractor'
         
-metafile = userhome + '/Dropbox/Python/dpcp/DPCP1Masterfile.txt'
+metafile = 'data\\DPCP1Masterfile.txt'
 #metafile = 'R:\\DA_and_Reward\\kp259\THPH1\\THPH1 Scripts_170616\\thph1-forMatPy.txt'
 metafileData, metafileHeader = jmf.metafilereader(metafile)
 
