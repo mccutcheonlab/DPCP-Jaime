@@ -13,8 +13,6 @@ session = rats[i].sessions[j]
 
 
 def calculate_pdp_prob(pdps):
-    
-    
     xdata = np.sort(pdps)
     ydata = [1-i/len(xdata) for i,val in enumerate(xdata)]
     

@@ -12,12 +12,16 @@ import numpy as np
 import scipy.io as sio
 import matplotlib.pyplot as plt
 from scipy.stats import ks_2samp
+import scipy.optimize as opt
+import scipy.stats as stats
 
 import JM_general_functions as jmf
 import JM_custom_figs as jmfig
 
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.gridspec as gridspec
+
+import pandas as pd
 
 plt.style.use('seaborn-muted')
 
@@ -80,6 +84,30 @@ class Session(object):
         else:
             self.distractors = self.distractors_calc
             self.distractorstatus = 'Simulated distractor'
+            
+    def calculate_pdp_prob(self):
+        self.pdp_xdata = np.sort(self.firstlick)
+        self.pdp_ydata = [1-i/len(self.pdp_xdata) for i,val in enumerate(self.pdp_xdata)]
+
+    def fit_doubleexp(self):
+        x0=np.array([0.5, 1, 1])
+        try:
+            self.fit=opt.curve_fit(doubleexp, self.pdp_xdata, self.pdp_ydata, x0)
+            self.dexp_alpha=self.fit[0][0]
+            self.dexp_beta=self.fit[0][1]
+            self.dexp_tau=self.fit[0][2]
+            slope, intercept, r_value, p_value, std_err = stats.linregress(
+                    self.pdp_ydata, doubleexp(self.pdp_xdata,
+                                     self.dexp_alpha,
+                                     self.dexp_beta,
+                                     self.dexp_tau))
+            self.dexp_rsq=r_value**2
+            print('Parameters found')
+        except:
+            print('Optimal parameters not found for', self.rat, 'session', self.session)
+
+def doubleexp(t, alpha, beta, tau):
+    return alpha*(np.exp(-beta*t)) + (1-alpha)*np.exp(-tau*t)
         
 metafile = 'data\\DPCP1Masterfile.txt'
 #metafile = 'R:\\DA_and_Reward\\kp259\THPH1\\THPH1 Scripts_170616\\thph1-forMatPy.txt'
@@ -112,26 +140,35 @@ for i in rats:
         x.extractdistractors()
         x.firstlick, x.distractedArray = jmf.distractedOrNot(x.distractors, x.lickData['licks'])
         
+        x.calculate_pdp_prob()
+        x.fit_doubleexp()
+        
+        
 i = 'dpcp1.16'
 j = 's4'
 
 session = rats[i].sessions[j]
 
+j='s3'
+pd.DataFrame([s.rat for s in rats])
 
-def calculate_pdp_prob(pdps):
-    bins = np.arange(min(pdps), max(pdps))
-    hist=np.histogram(pdps, bins=bins, density=True)
-    cumsum=np.cumsum(hist[0])
-
-    x = hist[1][1:]
-    y = [1-val for val in cumsum]
-    
-    return x, y
-
-xdata, ydata = calculate_pdp_prob(session.firstlick)
-
-
-#
+#for i in rats:
+#    j = 's3'
+#    x = rats[i].sessions[j]
+#    cumsumBL.append(x.firstlick)
+#    if x.condition == 'SAL':
+#        cumsumBLsal.append(x.firstlick)
+#    elif x.condition == 'PCP':
+#        cumsumBLpcp.append(x.firstlick)
+#        
+#    j = 's4'
+#    x = rats[i].sessions[j]
+#    cumsumDIS.append(x.firstlick)
+#    if x.condition == 'SAL':
+#        cumsumDISsal.append(x.firstlick)
+#    elif x.condition == 'PCP':
+#        cumsumDISpcp.append(x.firstlick)
+#    
 #
 #cumsumBL = []
 #cumsumBLsal = []
@@ -140,7 +177,7 @@ xdata, ydata = calculate_pdp_prob(session.firstlick)
 #cumsumDIS= []
 #cumsumDISsal = []
 #cumsumDISpcp = []
-#
+
 #for i in rats:
 #    j = 's3'
 #    x = rats[i].sessions[j]
