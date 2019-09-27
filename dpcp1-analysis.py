@@ -32,7 +32,7 @@ import timeit
 
 tic = timeit.default_timer()
 
-userhome = os.path.expanduser('~')
+#userhome = os.path.expanduser('~')
 datafolder = 'data\\'
 
 class Rat(object):
@@ -54,16 +54,14 @@ class Rat(object):
         
 class Session(object):
     
-    def __init__(self, data, header, rat, session):
-        self.hrow = {}
-        for idx, col in enumerate(header):
-            self.hrow[col] = data[idx]
-        self.medfile = datafolder + self.hrow['medfile']
-        self.distractorpresent = self.hrow['distractorpresent']
-        self.condition = self.hrow['condition']
-        self.rat = str(rat)
-        self.session = session
-        
+    def __init__(self, sessionID, metafiledata, hrows, datafolder):
+        self.sessionID = sessionID
+        self.rat = metafiledata[hrows['rat']].replace('.', '-')
+        self.session = metafiledata[hrows['session']]
+        self.medfile = datafolder + metafiledata[hrows['medfile']]
+        self.distractorpresent = metafiledata[hrows['distractorpresent']]
+        self.condition = metafiledata[hrows['condition']]
+ 
     def extractlicks(self):
         self.licks, self.offset = jmf.medfilereader(self.medfile,
                                                     varsToExtract = ['e', 'f'],
@@ -89,6 +87,24 @@ class Session(object):
         self.pdp_xdata = np.sort(self.firstlick)
         self.pdp_ydata = [1-i/len(self.pdp_xdata) for i,val in enumerate(self.pdp_xdata)]
 
+    def fit_singleexp(self):
+        x0=[0.5]
+        try:
+            self.fit1=opt.curve_fit(singleexp, self.pdp_xdata, self.pdp_ydata, x0)
+            self.sexp_alpha=self.fit1[0][0]
+            slope, intercept, r_value, p_value, std_err = stats.linregress(
+                    self.pdp_ydata, singleexp(self.pdp_xdata,
+                                     self.sexp_alpha))
+#            print(type(self.fit1), np.shape(self.fit1), self.fit1)
+            self.sexp_rsq=r_value**2
+            
+
+        except:
+            print('could not fit single exp')
+            self.sexp_alpha=0
+            self.sexp_rsq=0
+#  
+
     def fit_doubleexp(self):
         x0=np.array([0.5, 1, 1])
         try:
@@ -105,52 +121,95 @@ class Session(object):
             print('Parameters found')
         except:
             print('Optimal parameters not found for', self.rat, 'session', self.session)
+            self.dexp_alpha=0
+            self.dexp_beta=0
+            self.dexp_tau=0
+            self.dexp_rsq=0
+
+
+def singleexp(t, alpha):
+    return np.exp(-alpha*t)
 
 def doubleexp(t, alpha, beta, tau):
     return alpha*(np.exp(-beta*t)) + (1-alpha)*np.exp(-tau*t)
-        
+
+def metafile2sessions(metafile, datafolder):
+#    jmf.metafilemaker(xlfile, metafile, sheetname=sheetname, fileformat='txt')
+    rows, header = jmf.metafilereader(metafile)
+    
+    hrows = {}
+    for idx, field in enumerate(header):
+        hrows[field] = idx
+    
+    sessions = {}
+    
+    for row in rows:
+        sessionID = row[hrows['rat']].replace('.','-') + '_' + row[hrows['session']]
+        sessions[sessionID] = Session(sessionID, row, hrows, datafolder)
+    
+    return sessions   
+
+
+     
 metafile = 'data\\DPCP1Masterfile.txt'
-#metafile = 'R:\\DA_and_Reward\\kp259\THPH1\\THPH1 Scripts_170616\\thph1-forMatPy.txt'
-metafileData, metafileHeader = jmf.metafilereader(metafile)
+datafolder='data\\'
 
-exptsuffix = ''
-includecol = 11
+sessions = metafile2sessions(metafile, datafolder)
 
-rats = {}
-
-for i in metafileData:
-    if int(i[includecol]) == 1:
-        rowrat = str(i[1])
-        if rowrat not in rats:
-            rats[rowrat] = Rat(rowrat)
-        rats[rowrat].loadsession(i, metafileHeader)
-        
-for i in rats:
-    for j in rats[i].sessions:
-#        print('Analysing rat ' + i + ' in session ' + j)
-        x = rats[i].sessions[j]
-        
-        x.extractlicks()
-
-
-        x.lickData = jmf.lickCalc(x.licks,
+for session in sessions:
+      
+    x = sessions[session]
+    x.extractlicks()
+    x.lickData = jmf.lickCalc(x.licks,
                           offset = x.offset,
                           burstThreshold = 0.50)
-        
-        x.extractdistractors()
-        x.firstlick, x.distractedArray = jmf.distractedOrNot(x.distractors, x.lickData['licks'])
-        
-        x.calculate_pdp_prob()
-        x.fit_doubleexp()
-        
-        
-i = 'dpcp1.16'
-j = 's4'
+    x.extractdistractors()
+    x.firstlick, x.distractedArray = jmf.distractedOrNot(x.distractors, x.lickData['licks'])
+    x.calculate_pdp_prob()
+    x.fit_singleexp()
+    x.fit_doubleexp()
+    
+    
+df = pd.DataFrame([sessions[s].rat for s in sessions], columns=['rat'])
+    
+#exptsuffix = ''
+#includecol = 11
 
-session = rats[i].sessions[j]
-
-j='s3'
-pd.DataFrame([s.rat for s in rats])
+#rats = {}
+#
+#for i in metafileData:
+#    if int(i[includecol]) == 1:
+#        rowrat = str(i[1])
+#        if rowrat not in rats:
+#            rats[rowrat] = Rat(rowrat)
+#        rats[rowrat].loadsession(i, metafileHeader)
+        
+#for i in rats:
+#    for j in rats[i].sessions:
+##        print('Analysing rat ' + i + ' in session ' + j)
+#        x = rats[i].sessions[j]
+#        
+#        x.extractlicks()
+#
+#
+#        x.lickData = jmf.lickCalc(x.licks,
+#                          offset = x.offset,
+#                          burstThreshold = 0.50)
+#        
+#        x.extractdistractors()
+#        x.firstlick, x.distractedArray = jmf.distractedOrNot(x.distractors, x.lickData['licks'])
+#        
+#        x.calculate_pdp_prob()
+#        x.fit_doubleexp()
+#        
+#        
+#i = 'dpcp1.16'
+#j = 's4'
+#
+#session = rats[i].sessions[j]
+#
+#j='s3'
+#pd.DataFrame([s.rat for s in rats])
 
 #for i in rats:
 #    j = 's3'
