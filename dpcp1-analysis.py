@@ -85,6 +85,7 @@ class Session(object):
             
     def calculate_pdp_prob(self):
         self.pdp_xdata = np.sort(self.firstlick)
+        #self.pdp_xdata = np.log(np.sort(self.firstlick))
         self.pdp_ydata = [1-i/len(self.pdp_xdata) for i,val in enumerate(self.pdp_xdata)]
 
     def fit_singleexp(self):
@@ -95,10 +96,7 @@ class Session(object):
             slope, intercept, r_value, p_value, std_err = stats.linregress(
                     self.pdp_ydata, singleexp(self.pdp_xdata,
                                      self.sexp_alpha))
-#            print(type(self.fit1), np.shape(self.fit1), self.fit1)
             self.sexp_rsq=r_value**2
-            
-
         except:
             print('could not fit single exp')
             self.sexp_alpha=0
@@ -169,7 +167,9 @@ for session in sessions:
     x.fit_singleexp()
     x.fit_doubleexp()
     
-    
+
+
+
 df = pd.DataFrame([sessions[s].rat for s in sessions], columns=['rat'])
     
 #exptsuffix = ''
